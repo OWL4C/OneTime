@@ -236,6 +236,10 @@
     [self.actionDelegate promptDeleteBag:self.bag];
 }
 
+- (void)extract:(id)sender {
+    UIPasteboard.generalPasteboard.string = self.bag.generator.secret;
+}
+
 // MARK: - UIContextMenuInteractionDelegate
 
 - (UIContextMenuConfiguration *)contextMenuInteraction:(UIContextMenuInteraction *)interaction configurationForMenuAtLocation:(CGPoint)location API_AVAILABLE(ios(13.0)) {
@@ -254,6 +258,11 @@
                                                            image:[UIImage systemImageNamed:@"trash"]
                                                           action:@selector(delete:)
                                                            input:@"\b" modifierFlags:0
+                                                    propertyList:nil];
+    UIKeyCommand *extractCommand = [UIKeyCommand commandWithTitle:@"Extract Token to Clipboard"
+                                                           image:[UIImage systemImageNamed:@"doc.on.clipboard"]
+                                                          action:@selector(extract:)
+                                                           input:@"x" modifierFlags:0
                                                     propertyList:nil];
     deleteCommand.attributes = UIMenuElementAttributesDestructive;
     
@@ -280,7 +289,8 @@
         return [UIMenu menuWithTitle:@"" children:@[
             [UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:@[
                 copyCommand,
-                deleteCommand
+                deleteCommand,
+                extractCommand
             ]],
             [UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:additionalActions]
         ]];
