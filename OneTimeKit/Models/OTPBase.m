@@ -174,6 +174,7 @@ static BOOL CCDigestLengthForHmacAlgorithm(CCHmacAlgorithm algorithm, size_t *le
     for (char *valuePtr = value + digits; value < valuePtr; head /= base) {
         *(--valuePtr) = (head % base) + '0';
     }
+    //NSString* newStr = [[NSString alloc] initWithData:self.algorithm encoding:NSUTF8StringEncoding];
     return [[NSString alloc] initWithBytesNoCopy:value length:digits encoding:NSASCIIStringEncoding freeWhenDone:YES];
 }
 
@@ -184,6 +185,14 @@ static BOOL CCDigestLengthForHmacAlgorithm(CCHmacAlgorithm algorithm, size_t *le
 
 - (NSString *)password {
     return [self passwordForFactor:[self factor]];
+}
+
+- (NSString *)secret {
+    return [self.key base32EncodedStringWithOptions:NSDataBase32EncodingOptionsNoPad];
+}
+
+- (NSString *)qrString:(NSArray *)input {
+    return [NSString stringWithFormat: @"otpauth://totp/%@:%@?secret=%@&issuer=%@", input[0],input[1],self.secret,input[0]];
 }
 
 - (NSDictionary *)properties {

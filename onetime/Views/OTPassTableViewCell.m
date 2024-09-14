@@ -11,6 +11,7 @@
 #import "../../OneTimeKit/Models/OTPTime.h"
 #import "../../OneTimeKit/Models/OTPHash.h"
 #import "../../OneTimeKit/Services/OTBagCenter.h"
+#import "../../OneTimeKit/Services/OTQRCreatorService.h"
 
 @implementation OTPassTableViewCell {
     uint64_t _lastFactor;
@@ -240,6 +241,21 @@
     UIPasteboard.generalPasteboard.string = self.bag.generator.secret;
 }
 
+- (void)createQR:(id)sender {
+    NSArray *inputParameter = @[self.bag.issuer,self.bag.account];  // The parameter you want to pass
+    NSString *inputString = [self.bag.generator qrString:inputParameter];
+    NSURL *qrCodeImage_URL = [OTQRCreatorService generateQRCodeFileFromString:inputString];
+    // Copy the file URL to the pasteboard
+    [UIPasteboard generalPasteboard].items = @[@{(NSString *)kUTTypeFileURL : qrCodeImage_URL}];
+}
+
+- (void)copyQR:(id)sender {
+    NSArray *inputParameter = @[self.bag.issuer,self.bag.account];  // The parameter you want to pass
+    NSString *inputString = [self.bag.generator qrString:inputParameter];
+    UIImage *qrCodeImage = [OTQRCreatorService generateQRCodeFromString:inputString];
+    // Copy the image data to the pasteboard
+    UIPasteboard.generalPasteboard.image = qrCodeImage;
+}
 // MARK: - UIContextMenuInteractionDelegate
 
 - (UIContextMenuConfiguration *)contextMenuInteraction:(UIContextMenuInteraction *)interaction configurationForMenuAtLocation:(CGPoint)location API_AVAILABLE(ios(13.0)) {
@@ -259,12 +275,22 @@
                                                           action:@selector(delete:)
                                                            input:@"\b" modifierFlags:0
                                                     propertyList:nil];
+    deleteCommand.attributes = UIMenuElementAttributesDestructive;
     UIKeyCommand *extractCommand = [UIKeyCommand commandWithTitle:@"Extract Token to Clipboard"
                                                            image:[UIImage systemImageNamed:@"doc.on.clipboard"]
                                                           action:@selector(extract:)
                                                            input:@"x" modifierFlags:0
                                                     propertyList:nil];
-    deleteCommand.attributes = UIMenuElementAttributesDestructive;
+    UIKeyCommand *createQRCommand = [UIKeyCommand commandWithTitle:@"Copy Token QR Code File"
+                                                           image:[UIImage systemImageNamed:@"doc.on.clipboard"]
+                                                          action:@selector(createQR:)
+                                                           input:@"x" modifierFlags:0
+                                                    propertyList:nil];
+    UIKeyCommand *copyQRCommand = [UIKeyCommand commandWithTitle:@"Copy Token QR Code"
+                                                           image:[UIImage systemImageNamed:@"doc.on.clipboard"]
+                                                          action:@selector(copyQR:)
+                                                           input:@"x" modifierFlags:0
+                                                    propertyList:nil];
     
     NSMutableArray *additionalActions = [NSMutableArray array];
     
@@ -281,7 +307,7 @@
                 NSLog(@"openURLCompletedSuccessfully: %@", success ? @"YES" : @"NO");
             }];
         }];
-        [additionalActions addObject:exportAction];
+        [additionalActions addObjectsFromArray:@[exportAction,extractCommand,copyQRCommand,createQRCommand]];
     }
     
     return [UIContextMenuConfiguration configurationWithIdentifier:nil previewProvider:nil
@@ -290,7 +316,6 @@
             [UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:@[
                 copyCommand,
                 deleteCommand,
-                extractCommand
             ]],
             [UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:additionalActions]
         ]];
